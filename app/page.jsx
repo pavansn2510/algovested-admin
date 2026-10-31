@@ -729,21 +729,33 @@ export default function AdminDashboardPage() {
                     {/* Quick Pick from Pool */}
                     {proxies.length > 0 && (
                       <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-                        <div className="font-bold text-stone-700 text-[11px] mb-1.5">Quick Pick from Available Proxy Pool:</div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-bold text-stone-700 text-[11px]">Quick Pick from Available Proxy Pool:</span>
+                          <span className="text-[10px] text-stone-400">Strictly 1 IP per user</span>
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
-                          {proxies.map((px) => (
-                            <button
-                              key={px.id}
-                              type="button"
-                              onClick={() => {
-                                setEditIp(px.dedicated_ip);
-                                setEditProxy(px.proxy_url);
-                              }}
-                              className="rounded-lg border border-stone-300 bg-white px-2 py-1 text-[10px] font-mono font-bold text-stone-800 hover:border-emerald-500"
-                            >
-                              {px.dedicated_ip}
-                            </button>
-                          ))}
+                          {proxies.map((px) => {
+                            const isAssignedToOther = px.assigned_user_id && px.assigned_user_id !== selectedUser.id;
+                            return (
+                              <button
+                                key={px.id}
+                                type="button"
+                                disabled={isAssignedToOther}
+                                title={isAssignedToOther ? "Already allocated to another user" : "Available"}
+                                onClick={() => {
+                                  setEditIp(px.dedicated_ip);
+                                  setEditProxy(px.proxy_url);
+                                }}
+                                className={`rounded-lg border px-2 py-1 text-[10px] font-mono font-bold transition ${
+                                  isAssignedToOther
+                                    ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed line-through"
+                                    : "border-stone-300 bg-white text-stone-800 hover:border-emerald-500 hover:bg-emerald-50"
+                                }`}
+                              >
+                                {px.dedicated_ip} {isAssignedToOther ? "(In Use)" : "(Available)"}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

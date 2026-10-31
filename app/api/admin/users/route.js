@@ -99,6 +99,91 @@ export async function POST(request) {
     const cleanIp = (dedicated_ip || "").trim();
     const cleanProxy = (outbound_proxy_url || "").trim();
 
+    // 0. Strict check: Ensure the same IP or Proxy is NOT assigned to another user!
+    if (cleanIp || cleanProxy) {
+      // Check in user_profiles
+      let profQuery = supabase
+        .from("user_profiles")
+        .select("id, email, full_name, dedicated_ip, outbound_proxy_url")
+        .neq("id", targetUserId);
+
+      if (cleanIp && cleanProxy) {
+        profQuery = profQuery.or(`dedicated_ip.eq.${cleanIp},outbound_proxy_url.eq.${cleanProxy}`);
+      } else if (cleanIp) {
+        profQuery = profQuery.eq("dedicated_ip", cleanIp);
+      } else if (cleanProxy) {
+        profQuery = profQuery.eq("outbound_proxy_url", cleanProxy);
+      }
+
+      const { data: conflictingProfiles, error: confProfErr } = await profQuery;
+      if (confProfErr) throw confProfErr;
+
+      if (conflictingProfiles && conflictingProfiles.length > 0) {
+        const conflict = conflictingProfiles[0];
+        const conflictEmail = conflict.email || conflict.full_name || conflict.id;
+        return NextResponse.json(
+          {
+            error: `IP Conflict: ${cleanIp || cleanProxy} is already assigned to another user (${conflictEmail}). Each user must have a unique dedicated IP.`,
+          },
+          { status: 409 }
+        );
+      }
+
+      // Check in user_broker_accounts
+      let brokerQuery = supabase
+        .from("user_broker_accounts")
+        .select("id, user_id, broker, client_id, dedicated_ip, outbound_proxy_url")
+        .neq("user_id", targetUserId);
+
+      if (cleanIp && cleanProxy) {
+        brokerQuery = brokerQuery.or(`dedicated_ip.eq.${cleanIp},outbound_proxy_url.eq.${cleanProxy}`);
+      } else if (cleanIp) {
+        brokerQuery = brokerQuery.eq("dedicated_ip", cleanIp);
+      } else if (cleanProxy) {
+        brokerQuery = brokerQuery.eq("outbound_proxy_url", cleanProxy);
+      }
+
+      const { data: conflictingBrokers, error: confBrkErr } = await brokerQuery;
+      if (confBrkErr) throw confBrkErr;
+
+      if (conflictingBrokers && conflictingBrokers.length > 0) {
+        const conflictBrk = conflictingBrokers[0];
+        return NextResponse.json(
+          {
+            error: `IP Conflict: ${cleanIp || cleanProxy} is already assigned to another broker account (User ID: ${conflictBrk.user_id}). Each user must have a unique dedicated IP.`,
+          },
+          { status: 409 }
+        );
+      }
+
+      // Check in outbound_proxy_pool
+      if (cleanProxy || cleanIp) {
+        let poolQuery = supabase
+          .from("outbound_proxy_pool")
+          .select("id, proxy_url, dedicated_ip, assigned_user_id")
+          .not("assigned_user_id", "is", null)
+          .neq("assigned_user_id", targetUserId);
+
+        if (cleanProxy) {
+          poolQuery = poolQuery.eq("proxy_url", cleanProxy);
+        } else if (cleanIp) {
+          poolQuery = poolQuery.eq("dedicated_ip", cleanIp);
+        }
+
+        const { data: conflictingPool, error: poolErr } = await poolQuery;
+        if (poolErr) throw poolErr;
+
+        if (conflictingPool && conflictingPool.length > 0) {
+          return NextResponse.json(
+            {
+              error: `IP Conflict: Proxy pool marks this IP as already allocated to another user. Please choose an unassigned proxy from the pool.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     // 1. Update or upsert user_profiles
     const { error: profErr } = await supabase
       .from("user_profiles")
