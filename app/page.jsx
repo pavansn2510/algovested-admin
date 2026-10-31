@@ -508,36 +508,95 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {cronJobs.map((j) => (
-                  <div key={j.jobid} className="rounded-2xl border border-[#e7dfd1] bg-white p-4 shadow-xs flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="mono rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-600">
-                          #{j.jobid} &bull; {j.schedule}
-                        </span>
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Active
-                        </span>
-                      </div>
-                      <h3 className="font-extrabold text-xs text-stone-900 mt-2">{j.jobname}</h3>
-                      <p className="text-[11px] text-stone-500 mt-1 line-clamp-2 font-mono">
-                        {j.command.slice(0, 100)}...
-                      </p>
-                    </div>
+                {cronJobs.map((j) => {
+                  const statusColors = {
+                    in_progress: "bg-blue-100 text-blue-800 border-blue-200 animate-pulse",
+                    completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                    scheduled: "bg-amber-50 text-amber-800 border-amber-200",
+                    failed: "bg-rose-100 text-rose-800 border-rose-200",
+                    disabled: "bg-stone-100 text-stone-600 border-stone-200",
+                  };
 
-                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-                      <span className="text-[10px] text-stone-400 font-medium">Auto-fires via pg_cron</span>
-                      <button
-                        onClick={() => handleTriggerCron(j.jobname)}
-                        disabled={triggeringJob === j.jobname}
-                        className="inline-flex items-center gap-1 rounded-xl bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-50 transition"
-                      >
-                        <Play className="h-3 w-3 fill-white" />
-                        {triggeringJob === j.jobname ? "Triggering..." : "Trigger Now"}
-                      </button>
+                  const statusLabels = {
+                    in_progress: "In Progress",
+                    completed: "Completed",
+                    scheduled: "Scheduled",
+                    failed: "Failed",
+                    disabled: "Disabled",
+                  };
+
+                  return (
+                    <div key={j.jobid} className="rounded-2xl border border-[#e7dfd1] bg-white p-4 shadow-xs flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="mono rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-600">
+                            #{j.jobid} &bull; {j.schedule}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase border ${statusColors[j.current_status] || statusColors.scheduled}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              j.current_status === "completed"
+                                ? "bg-emerald-500"
+                                : j.current_status === "in_progress"
+                                ? "bg-blue-500"
+                                : j.current_status === "failed"
+                                ? "bg-rose-500"
+                                : "bg-amber-500"
+                            }`} />
+                            {statusLabels[j.current_status] || "Scheduled"}
+                          </span>
+                        </div>
+
+                        <h3 className="font-extrabold text-xs text-stone-900 mt-2.5">{j.jobname}</h3>
+                        
+                        {/* Last Run & Status Details */}
+                        <div className="mt-2 space-y-1 rounded-xl bg-stone-50/80 p-2 text-[11px] border border-stone-100">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-stone-500">Last Run:</span>
+                            <span className="font-mono font-medium text-stone-800">
+                              {j.last_run_start_time
+                                ? new Date(j.last_run_start_time).toLocaleString("en-IN", {
+                                    timeZone: "Asia/Kolkata",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }) + " IST"
+                                : "Never executed"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-stone-500">Current Status:</span>
+                            <span className="font-bold capitalize text-stone-900">
+                              {statusLabels[j.current_status] || "Scheduled"}
+                            </span>
+                          </div>
+
+                          {j.last_run_message && (
+                            <div className="flex items-center justify-between pt-0.5 border-t border-stone-200/50">
+                              <span className="font-bold text-stone-500">Result:</span>
+                              <span className="font-mono text-[10px] text-stone-700 truncate max-w-[140px]">
+                                {j.last_run_message}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+                        <span className="text-[10px] text-stone-400 font-medium">Auto-fires via pg_cron</span>
+                        <button
+                          onClick={() => handleTriggerCron(j.jobname)}
+                          disabled={triggeringJob === j.jobname}
+                          className="inline-flex items-center gap-1 rounded-xl bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-50 transition"
+                        >
+                          <Play className="h-3 w-3 fill-white" />
+                          {triggeringJob === j.jobname ? "Triggering..." : "Trigger Now"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
