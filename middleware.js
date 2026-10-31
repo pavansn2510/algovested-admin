@@ -15,8 +15,10 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // Check admin session cookie
-  const token = request.cookies.get("algovested_admin_session")?.value;
+  // Check admin session cookie or Authorization Bearer header
+  const authHeader = request.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+  const token = request.cookies.get("algovested_admin_session")?.value || bearerToken;
 
   if (!token) {
     if (pathname.startsWith("/api/")) {
