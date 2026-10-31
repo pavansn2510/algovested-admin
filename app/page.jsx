@@ -47,6 +47,12 @@ export default function AdminDashboardPage() {
   // Emails State
   const [emailLogs, setEmailLogs] = useState([]);
 
+  // Subscriptions & Notifications State
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [pendingIpCount, setPendingIpCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
+
   // Auto-dismiss toast
   useEffect(() => {
     if (toast) {
@@ -61,6 +67,8 @@ export default function AdminDashboardPage() {
     loadCrons();
     loadProxies();
     loadEmails();
+    loadSubscriptions();
+    loadNotifications();
   }, []);
 
   const loadUsers = async (q = "") => {
@@ -105,6 +113,39 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error("Emails load error:", err);
     }
+  };
+
+  const loadSubscriptions = async () => {
+    try {
+      const res = await fetch("/api/admin/subscriptions");
+      const data = await res.json();
+      if (data.subscriptions) setSubscriptions(data.subscriptions);
+      if (data.pending_ip_count != null) setPendingIpCount(data.pending_ip_count);
+    } catch (err) {
+      console.error("Subs load error:", err);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const res = await fetch("/api/admin/notifications");
+      const data = await res.json();
+      if (data.notifications) setNotifications(data.notifications);
+      if (data.unread_count != null) setUnreadAlerts(data.unread_count);
+    } catch (err) {
+      console.error("Alerts load error:", err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mark_all: true }),
+      });
+      loadNotifications();
+    } catch (err) {}
   };
 
   const handleSaveIpAssignment = async (e) => {
@@ -240,56 +281,294 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tab Bar */}
-        <div className="mx-auto flex max-w-7xl border-t border-stone-100 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl border-t border-stone-100 px-4 sm:px-6 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("purchases")}
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
+              activeTab === "purchases"
+                ? "border-emerald-600 text-emerald-800"
+                : "border-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Purchases &amp; Paid Users
+            {pendingIpCount > 0 && (
+              <span className="rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-black animate-pulse">
+                {pendingIpCount} Need IP
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("notifications")}
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
+              activeTab === "notifications"
+                ? "border-emerald-600 text-emerald-800"
+                : "border-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            <AlertCircle className="h-4 w-4" />
+            Live Alerts
+            {unreadAlerts > 0 && (
+              <span className="rounded-full bg-amber-500 text-white px-1.5 py-0.2 text-[10px] font-bold">
+                {unreadAlerts}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold transition ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
               activeTab === "users"
                 ? "border-emerald-600 text-emerald-800"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             <Users className="h-4 w-4" />
-            Users &amp; IP Allocation ({users.length})
+            All Users ({users.length})
           </button>
           <button
             onClick={() => setActiveTab("crons")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold transition ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
               activeTab === "crons"
                 ? "border-emerald-600 text-emerald-800"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             <Clock className="h-4 w-4" />
-            Cron Status &amp; Logs ({cronJobs.length})
+            Cron Status ({cronJobs.length})
           </button>
           <button
             onClick={() => setActiveTab("proxies")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold transition ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
               activeTab === "proxies"
                 ? "border-emerald-600 text-emerald-800"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             <Server className="h-4 w-4" />
-            Outbound IP Pool ({proxies.length})
+            IP Pool ({proxies.length})
           </button>
           <button
             onClick={() => setActiveTab("emails")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold transition ${
+            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
               activeTab === "emails"
                 ? "border-emerald-600 text-emerald-800"
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             <Mail className="h-4 w-4" />
-            Dispatched Emails ({emailLogs.length})
+            Email Logs ({emailLogs.length})
           </button>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {/* ── TAB: PURCHASES & PAID USERS (NEEDS IP PRIORITY) ── */}
+        {activeTab === "purchases" && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-[#e7dfd1] bg-white p-4 shadow-xs">
+              <div>
+                <h2 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                  <span>Paid Subscriptions &amp; Deployments</span>
+                  {pendingIpCount > 0 && (
+                    <span className="rounded-full bg-rose-100 border border-rose-300 text-rose-800 px-2 py-0.5 text-xs font-black">
+                      ⚠️ {pendingIpCount} Paid Users Awaiting Dedicated Static IP
+                    </span>
+                  )}
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Users who purchased a plan but do NOT yet have an outbound proxy assigned are surfaced at the very top.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadSubscriptions}
+                  className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Subscriptions Table */}
+            <div className="overflow-hidden rounded-2xl border border-[#e7dfd1] bg-white shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#ede5d8] bg-stone-50/70 text-[11px] font-extrabold uppercase text-stone-600">
+                      <th className="py-3 px-4">User Details</th>
+                      <th className="py-3 px-4">Plan Purchased</th>
+                      <th className="py-3 px-4">Amount</th>
+                      <th className="py-3 px-4">Subscription Status</th>
+                      <th className="py-3 px-4">Static IP Allocation</th>
+                      <th className="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f2ebe0]">
+                    {subscriptions.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs text-stone-500">
+                          No subscriptions recorded yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      subscriptions.map((sub) => (
+                        <tr
+                          key={sub.id}
+                          className={`transition ${
+                            !sub.is_ip_configured && sub.status === "active"
+                              ? "bg-rose-50/50 hover:bg-rose-50/80"
+                              : "hover:bg-stone-50/40"
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-stone-900">{sub.user_email}</div>
+                            <div className="text-[11px] text-stone-500">
+                              {sub.full_name} &bull; Bought {new Date(sub.created_at).toLocaleDateString("en-IN")}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-stone-900">{sub.plan_name}</span>
+                            <div className="text-[10px] text-stone-500 font-mono">
+                              Period ends: {new Date(sub.current_period_end).toLocaleDateString("en-IN")}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-mono font-bold text-stone-900">
+                            ₹{Number(sub.amount_inr).toLocaleString("en-IN")}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                sub.status === "active"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-rose-100 text-rose-800 border border-rose-200"
+                              }`}
+                            >
+                              {sub.status}
+                            </span>
+                            {sub.cancelled_at && (
+                              <div className="text-[10px] text-rose-600 font-medium mt-0.5">
+                                Cancelled {new Date(sub.cancelled_at).toLocaleDateString("en-IN")}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {sub.is_ip_configured ? (
+                              <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                <span className="font-mono">{sub.dedicated_ip || "Proxy Active"}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 font-bold text-rose-600 animate-pulse">
+                                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                                <span>NO IP CONFIGURED (Action Required)</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedUser({ id: sub.user_id, email: sub.user_email });
+                                setEditIp(sub.dedicated_ip || "");
+                                setEditProxy(sub.outbound_proxy_url || "");
+                              }}
+                              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold transition shadow-xs ${
+                                !sub.is_ip_configured
+                                  ? "bg-rose-600 text-white hover:bg-rose-700"
+                                  : "bg-stone-900 text-white hover:bg-stone-800"
+                              }`}
+                            >
+                              {!sub.is_ip_configured ? "🚨 Assign IP Now" : "Edit IP"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB: LIVE ALERTS & CANCELLATIONS ── */}
+        {activeTab === "notifications" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-2xl border border-[#e7dfd1] bg-white p-4 shadow-xs">
+              <div>
+                <h2 className="text-sm font-extrabold text-stone-900">Live Gateway &amp; Billing Alerts</h2>
+                <p className="text-xs text-stone-500">Real-time webhooks for new purchases, cancellations, and proxy requests.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleMarkAllRead}
+                  className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
+                >
+                  Mark All Read
+                </button>
+                <button
+                  onClick={loadNotifications}
+                  className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {notifications.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-xs text-stone-400">
+                  No alerts triggered. System operating smoothly.
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`rounded-2xl border p-4 transition ${
+                      n.event_type === "SUBSCRIPTION_CANCELLED"
+                        ? "border-rose-200 bg-rose-50/70 text-rose-950"
+                        : n.event_type === "PURCHASE_NEEDS_IP"
+                        ? "border-amber-200 bg-amber-50/70 text-amber-950"
+                        : "border-stone-200 bg-white text-stone-900"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${
+                          n.event_type === "SUBSCRIPTION_CANCELLED" ? "text-rose-600" : "text-amber-600"
+                        }`} />
+                        <div>
+                          <h4 className="font-bold text-xs">{n.title}</h4>
+                          <p className="text-xs text-stone-700 mt-0.5 leading-relaxed">{n.message}</p>
+                          <div className="flex items-center gap-2 mt-2 text-[10px] text-stone-500">
+                            <span className="font-mono">{new Date(n.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</span>
+                            <span>&bull;</span>
+                            <span className="font-bold uppercase">{n.event_type}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {n.event_type === "PURCHASE_NEEDS_IP" && n.user_id && (
+                        <button
+                          onClick={() => {
+                            setSelectedUser({ id: n.user_id, email: n.user_email });
+                            setEditIp("");
+                            setEditProxy("");
+                          }}
+                          className="shrink-0 rounded-xl bg-amber-600 text-white px-3 py-1.5 text-[11px] font-bold hover:bg-amber-700 transition"
+                        >
+                          Assign IP
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── TAB 1: USERS & IP ASSIGNMENT ── */}
         {activeTab === "users" && (
           <div className="space-y-4">
