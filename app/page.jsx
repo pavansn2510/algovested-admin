@@ -217,8 +217,17 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Connected: iuwmtepfsdsoatsygfoj
+              iuwmtepfsdsoatsygfoj
             </span>
+            <button
+              onClick={async () => {
+                await fetch("/api/auth", { method: "DELETE" });
+                window.location.href = "/login";
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
+            >
+              Log out
+            </button>
             <a
               href="https://algovested.com"
               target="_blank"
