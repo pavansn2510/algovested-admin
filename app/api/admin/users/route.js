@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ipFromProxyUrl } from "@/lib/proxy";
 import { getAdminSupabase } from "@/lib/supabase-admin";
 
 export async function GET(request) {
@@ -96,8 +97,12 @@ export async function POST(request) {
       targetUserId = found.id;
     }
 
-    const cleanIp = (dedicated_ip || "").trim();
     const cleanProxy = (outbound_proxy_url || "").trim();
+    // The dedicated IP is the proxy URL's host; a bare IP is still accepted when no proxy is given.
+    const cleanIp = cleanProxy ? (ipFromProxyUrl(cleanProxy) || "") : (dedicated_ip || "").trim();
+    if (cleanProxy && !cleanIp) {
+      return NextResponse.json({ error: "Enter a proxy URL like http://user:pass@ip:port" }, { status: 400 });
+    }
 
     // 0. Strict check: Ensure the same IP or Proxy is NOT assigned to another user!
     if (cleanIp || cleanProxy) {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ipFromProxyUrl } from "@/lib/proxy";
 import { getAdminSupabase } from "@/lib/supabase-admin";
 
 export async function GET() {
@@ -27,10 +28,12 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { proxy_url, dedicated_ip, is_admin_reserved } = body;
+    const { proxy_url, is_admin_reserved } = body;
+    // The IP is always the proxy URL's host, so the two can't disagree.
+    const dedicated_ip = ipFromProxyUrl(proxy_url);
 
     if (!proxy_url || !dedicated_ip) {
-      return NextResponse.json({ error: "proxy_url and dedicated_ip are required" }, { status: 400 });
+      return NextResponse.json({ error: "Enter a proxy URL like http://user:pass@ip:port" }, { status: 400 });
     }
 
     const supabase = getAdminSupabase();

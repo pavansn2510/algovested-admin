@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ipFromProxyUrl } from "@/lib/proxy";
 import {
   Users,
   Server,
@@ -38,7 +39,6 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editIp, setEditIp] = useState("");
   const [editProxy, setEditProxy] = useState("");
   const [savingUser, setSavingUser] = useState(false);
 
@@ -49,7 +49,6 @@ export default function AdminDashboardPage() {
 
   // Proxies State
   const [proxies, setProxies] = useState([]);
-  const [newProxyIp, setNewProxyIp] = useState("");
   const [newProxyUrl, setNewProxyUrl] = useState("");
   const [addingProxy, setAddingProxy] = useState(false);
 
@@ -169,7 +168,7 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: selectedUser.id,
-          dedicated_ip: editIp,
+          dedicated_ip: ipFromProxyUrl(editProxy) || "",
           outbound_proxy_url: editProxy,
         }),
       });
@@ -208,21 +207,20 @@ export default function AdminDashboardPage() {
 
   const handleAddProxy = async (e) => {
     e.preventDefault();
-    if (!newProxyIp || !newProxyUrl) return;
+    if (!ipFromProxyUrl(newProxyUrl)) return;
     setAddingProxy(true);
     try {
       const res = await fetch("/api/admin/ip-pool", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dedicated_ip: newProxyIp,
+          dedicated_ip: ipFromProxyUrl(newProxyUrl),
           proxy_url: newProxyUrl,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add proxy");
       setToast({ type: "success", message: "New proxy IP added to pool!" });
-      setNewProxyIp("");
       setNewProxyUrl("");
       loadProxies();
     } catch (err) {
@@ -446,7 +444,6 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => {
                                 setSelectedUser({ id: sub.user_id, email: sub.user_email });
-                                setEditIp(sub.dedicated_ip || "");
                                 setEditProxy(sub.outbound_proxy_url || "");
                               }}
                               className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold transition shadow-xs ${
@@ -529,7 +526,6 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => {
                             setSelectedUser({ id: n.user_id, email: n.user_email });
-                            setEditIp("");
                             setEditProxy("");
                           }}
                           className="shrink-0 rounded-xl bg-amber-600 text-white px-3 py-1.5 text-[11px] font-bold hover:bg-amber-700 transition"
@@ -639,7 +635,6 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => {
                                 setSelectedUser(u);
-                                setEditIp(u.dedicated_ip || "");
                                 setEditProxy(u.outbound_proxy_url || "");
                               }}
                               className="inline-flex items-center gap-1 rounded-xl bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-stone-800 transition"
@@ -675,19 +670,6 @@ export default function AdminDashboardPage() {
                   <form onSubmit={handleSaveIpAssignment} className="mt-4 space-y-4 text-xs">
                     <div>
                       <label className="block font-bold text-stone-800 mb-1">
-                        Dedicated Static IP (Whitelisted on Dhan)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 62.164.245.140"
-                        value={editIp}
-                        onChange={(e) => setEditIp(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-stone-50/50 p-2.5 font-mono font-medium focus:border-emerald-500 focus:bg-white focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1">
                         Outbound Proxy URL (Format: http://user:pass@ip:port)
                       </label>
                       <input
@@ -698,7 +680,11 @@ export default function AdminDashboardPage() {
                         className="w-full rounded-xl border border-stone-200 bg-stone-50/50 p-2.5 font-mono text-[11px] focus:border-emerald-500 focus:bg-white focus:outline-none"
                       />
                       <p className="mt-1 text-[11px] text-stone-500">
-                        Orders placed by this user will be routed strictly through this static proxy tunnel.
+                        {editProxy
+                          ? ipFromProxyUrl(editProxy)
+                            ? <>Dedicated IP: <span className="font-mono font-semibold text-stone-800">{ipFromProxyUrl(editProxy)}</span>. Orders from this user go through this proxy.</>
+                            : <span className="text-rose-700">That doesn't look like a proxy URL. Use http://user:pass@ip:port.</span>
+                          : "The dedicated IP is read from the URL. Orders from this user go through this proxy."}
                       </p>
                     </div>
 
@@ -719,7 +705,6 @@ export default function AdminDashboardPage() {
                                 disabled={isAssignedToOther}
                                 title={isAssignedToOther ? "Already allocated to another user" : "Available"}
                                 onClick={() => {
-                                  setEditIp(px.dedicated_ip);
                                   setEditProxy(px.proxy_url);
                                 }}
                                 className={`rounded-lg border px-2 py-1 text-[11px] font-mono font-bold transition ${
@@ -924,17 +909,7 @@ export default function AdminDashboardPage() {
             {/* Add New Proxy Form */}
             <div className="rounded-2xl border border-[#e7dfd1] bg-white p-5 shadow-xs">
               <h3 className="text-sm font-extrabold text-stone-900 mb-2">Add Dedicated Proxy to Pool</h3>
-              <form onSubmit={handleAddProxy} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs items-end">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Dedicated IP</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 62.164.245.140"
-                    value={newProxyIp}
-                    onChange={(e) => setNewProxyIp(e.target.value)}
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono"
-                  />
-                </div>
+              <form onSubmit={handleAddProxy} className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 text-xs items-start">
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">Proxy URL (with Auth)</label>
                   <input
@@ -944,12 +919,19 @@ export default function AdminDashboardPage() {
                     onChange={(e) => setNewProxyUrl(e.target.value)}
                     className="w-full rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono"
                   />
+                  <p className="mt-1 text-[11px] text-stone-500">
+                    {newProxyUrl
+                      ? ipFromProxyUrl(newProxyUrl)
+                        ? <>Dedicated IP: <span className="font-mono font-semibold text-stone-800">{ipFromProxyUrl(newProxyUrl)}</span></>
+                        : <span className="text-rose-700">Use the format http://user:pass@ip:port.</span>
+                      : "The dedicated IP is read from the URL."}
+                  </p>
                 </div>
                 <div>
                   <button
                     type="submit"
-                    disabled={addingProxy || !newProxyIp || !newProxyUrl}
-                    className="w-full rounded-xl bg-emerald-600 py-2.5 px-4 font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                    disabled={addingProxy || !ipFromProxyUrl(newProxyUrl)}
+                    className="w-full rounded-xl bg-stone-900 py-2.5 px-4 font-bold text-white hover:bg-stone-800 disabled:opacity-50 sm:mt-5"
                   >
                     {addingProxy ? "Adding..." : "+ Add to Proxy Pool"}
                   </button>
