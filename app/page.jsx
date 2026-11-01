@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ipFromProxyUrl } from "@/lib/proxy";
+import FunctionLogs from "@/components/FunctionLogs";
 import {
   Users,
   Server,
@@ -28,6 +29,7 @@ const NAV = [
   { id: "crons", label: "Cron jobs", Icon: Clock },
   { id: "proxies", label: "IP pool", Icon: Server },
   { id: "emails", label: "Email log", Icon: Mail },
+  { id: "functions", label: "Function logs", Icon: Activity },
 ];
 
 export default function AdminDashboardPage() {
@@ -988,6 +990,8 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ── TAB 4: EMAIL AUDIT LOGS ── */}
+        {activeTab === "functions" && <FunctionLogs />}
+
         {activeTab === "emails" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
