@@ -20,6 +20,15 @@ import {
   Layers,
 } from "lucide-react";
 
+const NAV = [
+  { id: "purchases", label: "Purchases", Icon: ShieldCheck },
+  { id: "notifications", label: "Alerts", Icon: AlertCircle },
+  { id: "users", label: "Users", Icon: Users },
+  { id: "crons", label: "Cron jobs", Icon: Clock },
+  { id: "proxies", label: "IP pool", Icon: Server },
+  { id: "emails", label: "Email log", Icon: Mail },
+];
+
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState("users"); // 'users' | 'crons' | 'proxies' | 'emails'
   const [loading, setLoading] = useState(false);
@@ -52,6 +61,8 @@ export default function AdminDashboardPage() {
   const [pendingIpCount, setPendingIpCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
+
+  const badges = { purchases: pendingIpCount, notifications: unreadAlerts };
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -222,7 +233,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0]">
+    <div className="min-h-screen bg-[#fbf8f3] text-stone-900">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -237,132 +248,97 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-[#e7dfd1] bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-900 text-white font-extrabold text-sm shadow-xs">
-              ⚡
-            </div>
+      {/* Sidebar on wide screens, tab strip on phones. */}
+      <div className="flex min-h-screen">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-[#e7dfd1] bg-white lg:flex">
+          <div className="flex items-center gap-3 px-5 py-5">
+            <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl" />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm tracking-tight text-stone-900">ALGOVESTED</span>
-                <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200 uppercase">
-                  Admin Console
-                </span>
-              </div>
-              <p className="text-[11px] text-stone-500 font-medium">admin.algovested.com &bull; Dhan Gateway Operations</p>
+              <p className="text-[15px] font-extrabold tracking-tight">Algovested</p>
+              <p className="text-xs font-medium text-stone-500">Admin console</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              iuwmtepfsdsoatsygfoj
-            </span>
-            <button
-              onClick={async () => {
-                await fetch("/api/auth", { method: "DELETE" });
-                window.location.href = "/login";
-              }}
-              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
-            >
-              Log out
-            </button>
-            <a
-              href="https://algovested.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-stone-600 hover:text-stone-900 transition"
-            >
-              Public App <ExternalLink className="h-3 w-3" />
-            </a>
+          <nav aria-label="Sections" className="flex-1 space-y-1 px-3">
+            {NAV.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                aria-current={activeTab === id ? "page" : undefined}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                  activeTab === id ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="flex-1 text-left">{label}</span>
+                {badges[id] ? (
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${activeTab === id ? "bg-amber-400 text-stone-900" : "bg-amber-100 text-amber-900"}`}>{badges[id]}</span>
+                ) : null}
+              </button>
+            ))}
+          </nav>
+          <div className="border-t border-[#e7dfd1] p-4 text-xs text-stone-500">
+            <p className="flex items-center gap-1.5 font-semibold text-stone-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" /> Supabase connected
+            </p>
+            <p className="mt-0.5 font-mono">iuwmtepfsdsoatsygfoj</p>
           </div>
-        </div>
+        </aside>
 
-        {/* Tab Bar */}
-        <div className="mx-auto flex max-w-7xl border-t border-stone-100 px-4 sm:px-6 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("purchases")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "purchases"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Purchases &amp; Paid Users
-            {pendingIpCount > 0 && (
-              <span className="rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-black animate-pulse">
-                {pendingIpCount} Need IP
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "notifications"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <AlertCircle className="h-4 w-4" />
-            Live Alerts
-            {unreadAlerts > 0 && (
-              <span className="rounded-full bg-amber-500 text-white px-1.5 py-0.2 text-[10px] font-bold">
-                {unreadAlerts}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "users"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            All Users ({users.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("crons")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "crons"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            Cron Status ({cronJobs.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("proxies")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "proxies"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <Server className="h-4 w-4" />
-            IP Pool ({proxies.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("emails")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-bold whitespace-nowrap transition ${
-              activeTab === "emails"
-                ? "border-emerald-600 text-emerald-800"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <Mail className="h-4 w-4" />
-            Email Logs ({emailLogs.length})
-          </button>
-        </div>
-      </header>
+        <div className="min-w-0 flex-1">
+          <header className="sticky top-0 z-30 border-b border-[#e7dfd1] bg-[#fbf8f3]/90 backdrop-blur-md">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-8">
+              <div className="flex items-center gap-3">
+                <img src="/icon.svg" alt="" className="h-8 w-8 rounded-lg lg:hidden" />
+                <h1 className="text-lg font-extrabold tracking-tight">{NAV.find((n) => n.id === activeTab)?.label}</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href="https://www.algovested.com" target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:inline-flex">
+                  Public site <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/auth", { method: "DELETE" });
+                    window.location.href = "/login";
+                  }}
+                  className="rounded-lg border border-[#e7dfd1] bg-white px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+            <nav aria-label="Sections" className="flex gap-1 overflow-x-auto px-4 pb-2 lg:hidden">
+              {NAV.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${activeTab === id ? "bg-stone-900 text-white" : "bg-white text-stone-600 border border-[#e7dfd1]"}`}
+                >
+                  {label}{badges[id] ? ` (${badges[id]})` : ""}
+                </button>
+              ))}
+            </nav>
+          </header>
 
-      {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <section aria-label="Overview" className="grid grid-cols-2 gap-3 px-4 pt-6 sm:px-8 xl:grid-cols-5">
+            {[
+              { label: "Paid users needing an IP", value: pendingIpCount, tab: "purchases", urgent: pendingIpCount > 0 },
+              { label: "Unread alerts", value: unreadAlerts, tab: "notifications", urgent: unreadAlerts > 0 },
+              { label: "Users", value: users.length, tab: "users" },
+              { label: "Failed cron jobs", value: cronJobs.filter((j) => j.current_status === "failed").length, tab: "crons", urgent: cronJobs.some((j) => j.current_status === "failed") },
+              { label: "IPs free in pool", value: proxies.filter((p) => !p.assigned_user_id).length, tab: "proxies" },
+            ].map((k) => (
+              <button
+                key={k.label}
+                onClick={() => setActiveTab(k.tab)}
+                className={`rounded-2xl border bg-white p-4 text-left transition hover:shadow-sm ${k.urgent ? "border-amber-300" : "border-[#e7dfd1]"}`}
+              >
+                <p className="text-xs font-semibold text-stone-500">{k.label}</p>
+                <p className={`mt-1 text-2xl font-extrabold tabular-nums ${k.urgent ? "text-amber-700" : "text-stone-900"}`}>{k.value}</p>
+              </button>
+            ))}
+          </section>
+
+      <main className="px-4 py-6 sm:px-8">
         {/* ── TAB: PURCHASES & PAID USERS (NEEDS IP PRIORITY) ── */}
         {activeTab === "purchases" && (
           <div className="space-y-5">
@@ -430,7 +406,7 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3 px-4">
                             <span className="font-bold text-stone-900">{sub.plan_name}</span>
-                            <div className="text-[10px] text-stone-500 font-mono">
+                            <div className="text-[11px] text-stone-500 font-mono">
                               Period ends: {new Date(sub.current_period_end).toLocaleDateString("en-IN")}
                             </div>
                           </td>
@@ -439,7 +415,7 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                              className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-extrabold uppercase ${
                                 sub.status === "active"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-rose-100 text-rose-800 border border-rose-200"
@@ -448,7 +424,7 @@ export default function AdminDashboardPage() {
                               {sub.status}
                             </span>
                             {sub.cancelled_at && (
-                              <div className="text-[10px] text-rose-600 font-medium mt-0.5">
+                              <div className="text-[11px] text-rose-600 font-medium mt-0.5">
                                 Cancelled {new Date(sub.cancelled_at).toLocaleDateString("en-IN")}
                               </div>
                             )}
@@ -541,7 +517,7 @@ export default function AdminDashboardPage() {
                         <div>
                           <h4 className="font-bold text-xs">{n.title}</h4>
                           <p className="text-xs text-stone-700 mt-0.5 leading-relaxed">{n.message}</p>
-                          <div className="flex items-center gap-2 mt-2 text-[10px] text-stone-500">
+                          <div className="flex items-center gap-2 mt-2 text-[11px] text-stone-500">
                             <span className="font-mono">{new Date(n.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</span>
                             <span>&bull;</span>
                             <span className="font-bold uppercase">{n.event_type}</span>
@@ -628,7 +604,7 @@ export default function AdminDashboardPage() {
                             <div className="text-[11px] text-stone-500">{u.full_name} &bull; Joined {new Date(u.created_at).toLocaleDateString("en-IN")}</div>
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                            <span className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-extrabold uppercase ${
                               u.role === "admin"
                                 ? "bg-purple-100 text-purple-800 border border-purple-200"
                                 : "bg-stone-100 text-stone-700 border border-stone-200"
@@ -640,7 +616,7 @@ export default function AdminDashboardPage() {
                             {u.broker_account ? (
                               <div>
                                 <span className="font-bold text-emerald-800">{u.broker_account.broker}</span> ({u.broker_account.client_id})
-                                <div className="text-[10px] text-stone-500 uppercase">{u.broker_account.mode} MODE</div>
+                                <div className="text-[11px] text-stone-500 uppercase">{u.broker_account.mode} MODE</div>
                               </div>
                             ) : (
                               <span className="text-stone-400">No broker connected</span>
@@ -731,7 +707,7 @@ export default function AdminDashboardPage() {
                       <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="font-bold text-stone-700 text-[11px]">Quick Pick from Available Proxy Pool:</span>
-                          <span className="text-[10px] text-stone-400">Strictly 1 IP per user</span>
+                          <span className="text-[11px] text-stone-400">Strictly 1 IP per user</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {proxies.map((px) => {
@@ -746,7 +722,7 @@ export default function AdminDashboardPage() {
                                   setEditIp(px.dedicated_ip);
                                   setEditProxy(px.proxy_url);
                                 }}
-                                className={`rounded-lg border px-2 py-1 text-[10px] font-mono font-bold transition ${
+                                className={`rounded-lg border px-2 py-1 text-[11px] font-mono font-bold transition ${
                                   isAssignedToOther
                                     ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed line-through"
                                     : "border-stone-300 bg-white text-stone-800 hover:border-emerald-500 hover:bg-emerald-50"
@@ -820,10 +796,10 @@ export default function AdminDashboardPage() {
                     <div key={j.jobid} className="rounded-2xl border border-[#e7dfd1] bg-white p-4 shadow-xs flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="mono rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-600">
+                          <span className="mono rounded bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-600">
                             #{j.jobid} &bull; {j.schedule}
                           </span>
-                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase border ${statusColors[j.current_status] || statusColors.scheduled}`}>
+                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-extrabold uppercase border ${statusColors[j.current_status] || statusColors.scheduled}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${
                               j.current_status === "completed"
                                 ? "bg-emerald-500"
@@ -866,7 +842,7 @@ export default function AdminDashboardPage() {
                           {j.last_run_message && (
                             <div className="flex items-center justify-between pt-0.5 border-t border-stone-200/50">
                               <span className="font-bold text-stone-500">Result:</span>
-                              <span className="font-mono text-[10px] text-stone-700 truncate max-w-[140px]">
+                              <span className="font-mono text-[11px] text-stone-700 truncate max-w-[140px]">
                                 {j.last_run_message}
                               </span>
                             </div>
@@ -875,7 +851,7 @@ export default function AdminDashboardPage() {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-                        <span className="text-[10px] text-stone-400 font-medium">Auto-fires via pg_cron</span>
+                        <span className="text-[11px] text-stone-400 font-medium">Auto-fires via pg_cron</span>
                         <button
                           onClick={() => handleTriggerCron(j.jobname)}
                           disabled={triggeringJob === j.jobname}
@@ -920,7 +896,7 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="py-2.5 px-4 font-bold text-stone-900">{r.jobname}</td>
                             <td className="py-2.5 px-4">
-                              <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                              <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-extrabold uppercase ${
                                 r.status === "succeeded"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-rose-100 text-rose-800"
@@ -1001,17 +977,17 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-4 font-mono text-[11px] text-stone-600">{p.proxy_url}</td>
                         <td className="py-3 px-4">
                           {p.assigned_user_id ? (
-                            <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                            <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800 border border-emerald-200">
                               Assigned ({p.assigned_user_id.slice(0, 8)}...)
                             </span>
                           ) : (
-                            <span className="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200">
+                            <span className="rounded bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-600 border border-stone-200">
                               Available in Pool
                             </span>
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                          <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-extrabold uppercase ${
                             p.dhan_ip_synced ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                           }`}>
                             {p.dhan_ip_status || (p.dhan_ip_synced ? "SYNCED" : "PENDING")}
@@ -1070,11 +1046,11 @@ export default function AdminDashboardPage() {
                           <td className="py-2.5 px-4 font-bold text-stone-900">{log.recipient_email}</td>
                           <td className="py-2.5 px-4 text-stone-700 max-w-xs truncate">{log.subject}</td>
                           <td className="py-2.5 px-4">
-                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
+                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-extrabold text-emerald-800">
                               {log.status}
                             </span>
                           </td>
-                          <td className="py-2.5 px-4 font-mono text-[10px] text-stone-400 truncate max-w-[150px]">
+                          <td className="py-2.5 px-4 font-mono text-[11px] text-stone-400 truncate max-w-[150px]">
                             {log.smtp_message_id}
                           </td>
                         </tr>
@@ -1087,6 +1063,8 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </main>
+        </div>
+      </div>
     </div>
   );
 }

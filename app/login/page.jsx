@@ -36,25 +36,21 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#fbf8f3] p-4">
       <div className="w-full max-w-md">
         
         {/* Brand Card */}
         <div className="text-center mb-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-900 text-white font-extrabold text-xl shadow-md mb-3">
-            ⚡
-          </div>
-          <h1 className="text-xl font-black text-stone-900 tracking-tight">ALGOVESTED ADMIN</h1>
-          <p className="text-xs text-stone-500 font-medium mt-1">
-            Restricted Access &bull; Quantitative &amp; Gateway Operations
-          </p>
+          <img src="/icon.svg" alt="" className="mx-auto mb-3 h-12 w-12 rounded-2xl" />
+          <h1 className="text-xl font-extrabold tracking-tight text-stone-900">Algovested admin</h1>
+          <p className="mt-1 text-sm text-stone-500">Restricted access</p>
         </div>
 
         {/* Login Box */}
-        <div className="rounded-3xl border border-[#e7dfd1] bg-white p-7 shadow-xl">
+        <div className="rounded-2xl border border-[#e7dfd1] bg-white p-7 shadow-sm">
           <div className="flex items-center gap-2 mb-5 pb-3 border-b border-stone-100">
-            <Lock className="h-4 w-4 text-emerald-700" />
-            <h2 className="text-sm font-extrabold text-stone-900">Admin Authentication Required</h2>
+            <Lock className="h-4 w-4 text-stone-700" />
+            <h2 className="text-[15px] font-bold text-stone-900">Sign in</h2>
           </div>
 
           {error && (
@@ -64,9 +60,9 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Admin Email Address</label>
+              <label className="block font-bold text-stone-700 mb-1">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                 <input
@@ -75,13 +71,13 @@ export default function AdminLoginPage() {
                   placeholder="admin@algovested.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-10 pr-4 text-xs font-medium text-stone-900 placeholder:text-stone-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Master Password</label>
+              <label className="block font-bold text-stone-700 mb-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                 <input
@@ -90,7 +86,7 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-10 pr-4 text-xs font-medium text-stone-900 placeholder:text-stone-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                 />
               </div>
             </div>
@@ -98,16 +94,16 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-stone-900 py-3 px-4 font-bold text-white hover:bg-stone-800 transition disabled:opacity-50 shadow-md text-xs"
+              className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-stone-900 py-3 px-4 font-bold text-white hover:bg-stone-800 transition disabled:opacity-50 text-sm"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Verifying Credentials...</span>
+                  <span>Checking…</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In to Admin Console</span>
+                  <span>Sign in</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
